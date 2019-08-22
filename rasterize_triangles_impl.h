@@ -31,9 +31,9 @@ namespace operators{
 // z_buffer: A flattened 2D array with image_height*image_width elements. At
 //     return, contains the normalized device Z coordinates of the rendered
 //     triangles.
-void RasterizeTrianglesImpl(const float* vertices, const int32* triangles,
-                            int32 triangle_count, int32 image_width,
-                            int32 image_height, int32* triangle_ids,
+void RasterizeTrianglesImpl(const float* vertices, const int* triangles,
+                            int triangle_count, int image_width,
+                            int image_height, int* triangle_ids,
                             float* barycentric_coordinates, float* z_buffer);
 }
 }

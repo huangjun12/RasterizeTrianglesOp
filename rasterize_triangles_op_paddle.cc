@@ -18,31 +18,27 @@ public:
                 "This is a 2-D tensor with the shape of [triangle_count, 3]."
                 "Each row is a tuple of indices into vertices specifying a triangle to be drawn.");
         AddOutput("BarycentricCoordinates",
-                R"DOC((Tensor), The first output tensor of rasterize triangles op.
-                      3-D tensor with shape [image_height, image_width, 3] containing the rendered
-                      barycentric coordinate triplet per pixel, before perspective correction.
-                      The triplet is the zero vector if the pixel is outside the mesh boundary.
-                      For valid pixels, the ordering of the coordinates corresponds to the ordering
-                      in triangles.
-                )DOC");
+                "(Tensor), The first output tensor of rasterize triangles op."
+                "3-D tensor with shape [image_height, image_width, 3] containing the rendered"
+                "barycentric coordinate triplet per pixel, before perspective correction."
+                "The triplet is the zero vector if the pixel is outside the mesh boundary."
+                "For valid pixels, the ordering of the coordinates corresponds to the ordering"
+                "in triangles.");
         AddOutput("TriangleIds",
-                R"DOC((Tensor), The second output tensor of rasterize triangles op.
-                      2-D tensor with shape [image_height, image_width]. Contains the triangle id value
-                      for each pixel in the output image. For pixels within the mesh, this is the
-                      integer value in the range [0, num_vertices] from triangles.
-                      For vertices outside the mesh this is 0; 0 can either indicate belonging to
-                      triangle 0, or being outside the mesh. This ensures all returned triangle ids
-                      will validly index into the vertex array, enabling the use of tf.gather with
-                      indices from this tensor. The barycentric coordinates can be used to determine
-                      pixel validity instead.
-                )DOC");
+                "(Tensor), The second output tensor of rasterize triangles op."
+                "2-D tensor with shape [image_height, image_width]. Contains the triangle id value"
+                "for each pixel in the output image. For pixels within the mesh, this is the"
+                "integer value in the range [0, num_vertices] from triangles."
+                "For vertices outside the mesh this is 0; 0 can either indicate belonging to triangle 0,"
+                "or being outside the mesh. This ensures all returned triangle ids will validly index"
+                "into the vertex array, enabling the use of tf.gather with indices from this tensor."
+                "The barycentric coordinates can be used to determine pixel validity instead.");
         AddOutput("ZBuffer",
-                R"DOC((Tensor), The third output tensor of rasterize triangles op.
-                      2-D tensor with shape [image_height, image_width]. Contains the coordinate in
-                      Normalized Device Coordinates for each pixel occupied by a triangle.
-                )DOC");
-        AddAttr<int>("image_height", "positive int attribute specifying the height of the output image.");
-        AddAttr<int>("image_width", "positive int attribute specifying the width of the output image.");
+                "(Tensor), The third output tensor of rasterize triangles op."
+                "2-D tensor with shape [image_height, image_width]. Contains the coordinate in"
+                "Normalized Device Coordinates for each pixel occupied by a triangle.");
+        AddAttr<int>("image_height", "positive int attribute specifying the height of the output image.").GreaterThan(0);
+        AddAttr<int>("image_width", "positive int attribute specifying the width of the output image.").GreaterThan(0);
         AddComment(R"DOC(
 Rasterize Triangles Operator.
 
@@ -84,9 +80,6 @@ class RasterizeTrianglesOp : public framework::OperatorWithKernel{
 
     int image_height = ctx->Attrs().Get<int>("image_height");
     int image_width = ctx->Attrs().Get<int>("image_width");
-
-    PADDLE_ENFORCE_GT(image_height, 0, "Image height must be > 0, get d%", %image_height);
-    PADDLE_ENFORCE_GT(image_width, 0, "Image width must be > 0, get d%", %image_width);
 
     ctx->SetOutputDim("BarycentricCoordinates", {image_height, image_width, static_cast<int>(3)});
     ctx->SetOutputDim("TriangleIds", {image_height, image_width});
@@ -144,9 +137,11 @@ REGISTER_OPERATOR(rasterize_triangles, ops::RasterizeTrianglesOp, ops::Rasterize
     ops::RasterizeTrianglesOpGradMaker);
 REGISTER_OPERATOR(rasterize_triangles_grad, ops::RasterizeTrianglesGradOp);
 REGISTER_OP_CPU_KERNEL(rasterize_triangles,
-    ops::RasterizeTrianglesKernel<float>, ops::RasterizeTrianglesKernel<double>);
+    ops::RasterizeTrianglesKernel<paddle::platform::CPUDeviceContext, float>,
+    ops::RasterizeTrianglesKernel<paddle::platform::CPUDeviceContext, double>);
 REGISTER_OP_CPU_KERNEL(rasterize_triangles_grad,
-    ops::RasterizeTrianglesGradKernel<float>, ops::RasterizeTrianglesGradKernel<double>);
+    ops::RasterizeTrianglesGradKernel<paddle::platform::CPUDeviceContext, float>,
+    ops::RasterizeTrianglesGradKernel<paddle::platform::CPUDeviceContext, double>);
 
 
 

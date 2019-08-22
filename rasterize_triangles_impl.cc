@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cmath>
 
-#include "rasterize_triangles_impl.h"
+#include "paddle/fluid/operators/rasterize_triangles_impl.h"
 
 namespace paddle{
 namespace operators{

@@ -3,7 +3,7 @@
 #include "paddle/fluid/framework/op_registry.h"
 #include "paddle/fluid/framework/operator.h"
 #include "paddle/fluid/framework/eigen.h"
-#include "rasterize_triangles_impl.h"
+#include "paddle/fluid/operators/rasterize_triangles_impl.h"
 
 namespace {
 // Threshold for a barycentric coordinate triplet's sum, below which the
@@ -30,8 +30,8 @@ template <typename DeviceContext, typename T>
 class RasterizeTrianglesKernel : public framework::OpKernel<T> {
 public:
     void Compute(const framework::ExecutionContext& context) const override {
-        Tensor* vertices_tensor = context.Input<Tensor>("Vertices");
-        Tensor* triangles_tensor = context.Input<Tensor>("Triangles");
+        const Tensor* vertices_tensor = context.Input<Tensor>("Vertices");  //input must stable
+        const Tensor* triangles_tensor = context.Input<Tensor>("Triangles");
         Tensor* barycentric_coordinates_tensor = context.Output<Tensor>("BarycentricCoordinates");
         Tensor* triangle_ids_tensor = context.Output<Tensor>("TriangleIds");
         Tensor* z_buffer_tensor = context.Output<Tensor>("ZBuffer");
@@ -63,12 +63,12 @@ public:
 template <typename DeviceContext, typename T>
 class RasterizeTrianglesGradKernel : public framework::OpKernel<T> {
 public:
-    void Compute(const framework::ExecutionContext& ctx) const override {
-        Tensor* vertices_tensor = context.Input<Tensor>("Vertices");
-        Tensor* triangles_tensor = context.Input<Tensor>("Triangles");
-        Tensor* barycentric_coordinates_tensor = context.Input<Tensor>("BarycentricCoordinates");
-        Tensor* triangle_ids_tensor = context.Input<Tensor>("TriangleIds");
-        Tensor* df_barycentric_coordinates_tensor = context.Input<Tensor>(
+    void Compute(const framework::ExecutionContext& context) const override {
+        const Tensor* vertices_tensor = context.Input<Tensor>("Vertices");
+        const Tensor* triangles_tensor = context.Input<Tensor>("Triangles");
+        const Tensor* barycentric_coordinates_tensor = context.Input<Tensor>("BarycentricCoordinates");
+        const Tensor* triangle_ids_tensor = context.Input<Tensor>("TriangleIds");
+        const Tensor* df_barycentric_coordinates_tensor = context.Input<Tensor>(
                 framework::GradVarName("BarycentricCoordinates"));
         Tensor* df_vertices_tensor = context.Output<Tensor>(
                 framework::GradVarName("Vertices"));
@@ -79,7 +79,7 @@ public:
         auto vertices_eigen = framework::EigenVector<float>::Flatten(*vertices_tensor);
         auto triangles_eigen = framework::EigenVector<int>::Flatten(*triangles_tensor);
         auto barycentric_coordinates_eigen = framework::EigenVector<float>::Flatten(*barycentric_coordinates_tensor);
-        auto triangles_ids_eigen = framework::EigenVector<int>::Flatten(*triangles_ids_tensor);
+        auto triangle_ids_eigen = framework::EigenVector<int>::Flatten(*triangle_ids_tensor);
         auto df_barycentric_coordinates_eigen = framework::EigenVector<float>::Flatten(*df_barycentric_coordinates_tensor);
         auto df_vertices_eigen = framework::EigenVector<float>::Flatten(*df_vertices_tensor);
 
@@ -87,7 +87,7 @@ public:
         const unsigned int vertex_count = vertices_eigen.size() / 4;
         const int* triangles_data = triangles_eigen.data();
         const float* barycentric_coordinates_data = barycentric_coordinates_eigen.data();
-        const int* triangle_ids_data = triangles_ids_eigen.data();
+        const int* triangle_ids_data = triangle_ids_eigen.data();
         const float* df_barycentric_coordinates_data = df_barycentric_coordinates_eigen.data();
         float* df_vertices_data = df_vertices_eigen.data();
 
@@ -143,9 +143,9 @@ public:
         const float db2_dw = -(db0_dw + db1_dw);
 
         // Combine them with chain rule.
-        const float df_dx = df_db0 * db0_dx + df_db1 * db1_dx + df_db2 * db2_dx;
-        const float df_dy = df_db0 * db0_dy + df_db1 * db1_dy + df_db2 * db2_dy;
-        const float df_dw = df_db0 * db0_dw + df_db1 * db1_dw + df_db2 * db2_dw;
+        const float df_dx = df_b0 * db0_dx + df_b1 * db1_dx + df_b2 * db2_dx;
+        const float df_dy = df_b0 * db0_dy + df_b1 * db1_dy + df_b2 * db2_dy;
+        const float df_dw = df_b0 * db0_dw + df_b1 * db1_dw + df_b2 * db2_dw;
 
         // Values of edge equations and inverse w at the current pixel.
         const float edge0_over_w = x2 * db0_dx + y2 * db0_dy + w2 * db0_dw;
