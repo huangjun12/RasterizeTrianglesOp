@@ -42,7 +42,9 @@ public:
         AddComment(R"DOC(
 Rasterize Triangles Operator.
 
-This operator is used for rendering mesh geometry.
+This operator is used for rendering mesh geometry(https://github.com/google/tf_mesh_renderer).
+
+The algorithm implemented is described by Olano and Greer, "Triangle Scan Conversion using 2D Homogeneous Coordinates," HWWS 1997.
 )DOC");
     }
 };
@@ -66,17 +68,22 @@ class RasterizeTrianglesOp : public framework::OperatorWithKernel{
 
     PADDLE_ENFORCE_EQ(v_dims.size(), 2UL,
             "Input(Vertices) should be 2-D tensor.");
+    /*
     PADDLE_ENFORCE_EQ(v_dims[-1], 4UL,
             "The second dim of Vertices should be 4, which consists"
             "the 3-D positions of the mesh vertices in clip-space (XYZW), but get u%.",
             v_dims[-1]);
+    */
 
     PADDLE_ENFORCE_EQ(t_dims.size(), 2UL,
                       "Input(Triangles) should be 2-D tensor.");
+
+    /*
     PADDLE_ENFORCE_EQ(t_dims[-1], 3UL,
                       "The second dim of Triangles should be 3, which consists the"
                       "indices into vertices specifying a triangle to be drawn, but get u%.",
                       t_dims[-1]);
+    */
 
     int image_height = ctx->Attrs().Get<int>("image_height");
     int image_width = ctx->Attrs().Get<int>("image_width");
