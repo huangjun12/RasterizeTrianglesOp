@@ -85,7 +85,7 @@ template <typename DeviceContext, typename T>
 class RasterizeTrianglesKernel : public framework::OpKernel<T> {
 public:
     void Compute(const framework::ExecutionContext& context) const override {
-        const Tensor* vertices_tensor = context.Input<Tensor>("Vertices");  //input must stable
+        const Tensor* vertices_tensor = context.Input<Tensor>("Vertices");
         const Tensor* triangles_tensor = context.Input<Tensor>("Triangles");
         Tensor* barycentric_coordinates_tensor = context.Output<Tensor>("BarycentricCoordinates");
         Tensor* triangle_ids_tensor = context.Output<Tensor>("TriangleIds");
@@ -312,4 +312,3 @@ public:
 
 } // namespace operators
 } // namespace paddle
-

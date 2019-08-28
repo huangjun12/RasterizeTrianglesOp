@@ -68,22 +68,9 @@ class RasterizeTrianglesOp : public framework::OperatorWithKernel{
 
     PADDLE_ENFORCE_EQ(v_dims.size(), 2UL,
             "Input(Vertices) should be 2-D tensor.");
-    /*
-    PADDLE_ENFORCE_EQ(v_dims[-1], 4UL,
-            "The second dim of Vertices should be 4, which consists"
-            "the 3-D positions of the mesh vertices in clip-space (XYZW), but get u%.",
-            v_dims[-1]);
-    */
 
     PADDLE_ENFORCE_EQ(t_dims.size(), 2UL,
                       "Input(Triangles) should be 2-D tensor.");
-
-    /*
-    PADDLE_ENFORCE_EQ(t_dims[-1], 3UL,
-                      "The second dim of Triangles should be 3, which consists the"
-                      "indices into vertices specifying a triangle to be drawn, but get u%.",
-                      t_dims[-1]);
-    */
 
     int image_height = ctx->Attrs().Get<int>("image_height");
     int image_width = ctx->Attrs().Get<int>("image_width");
@@ -92,7 +79,7 @@ class RasterizeTrianglesOp : public framework::OperatorWithKernel{
     ctx->SetOutputDim("TriangleIds", {image_height, image_width});
     ctx->SetOutputDim("ZBuffer", {image_height, image_width});
   }
-protected:    //int not float bug
+protected:
     framework::OpKernelType GetExpectedKernelType(
             const framework::ExecutionContext& ctx) const override {
         return framework::OpKernelType(ctx.Input<framework::Tensor>("Vertices")->type(),
@@ -161,7 +148,3 @@ REGISTER_OP_CPU_KERNEL(rasterize_triangles,
 REGISTER_OP_CPU_KERNEL(rasterize_triangles_grad,
     ops::RasterizeTrianglesGradKernel<paddle::platform::CPUDeviceContext, float>,
     ops::RasterizeTrianglesGradKernel<paddle::platform::CPUDeviceContext, double>);
-
-
-
-

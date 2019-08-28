@@ -1,6 +1,3 @@
-
-# Copixel_yright... 
-
 import unittest
 from op_test import OpTest
 
@@ -51,12 +48,11 @@ def ComputeRasterizeTriangles(vertices, triangles, image_height, image_width):
     half_image_height = 0.5 * image_height
 
     for triangle_id in range(triangle_count):
-        #compute for each triangle in mesh
         vx0_id = 4 * triangles[3 * triangle_id];
         vx1_id = 4 * triangles[3 * triangle_id + 1];
         vx2_id = 4 * triangles[3 * triangle_id + 2];
 
-        vw0 = vertices[vx0_id + 3]  #get the last one in each row of vertices, w from xyzw
+        vw0 = vertices[vx0_id + 3]
         vw1 = vertices[vx1_id + 3] 
         vw2 = vertices[vx2_id + 3]
         
@@ -127,34 +123,16 @@ def ComputeRasterizeTriangles(vertices, triangles, image_height, image_width):
     barycentric_coordinates = barycentric_coordinates.reshape(image_height, image_width, 3)
     triangle_ids = triangle_ids.reshape(image_height, image_width)
     z_buffer = z_buffer.reshape(image_height, image_width)
-#    print('barycentric_coordinates', barycentric_coordinates)
-#    print('triangle_ids', triangle_ids)
-#    print('z_buffer', z_buffer)
     return barycentric_coordinates, triangle_ids, z_buffer
 
-class TestRasterizeTrianglesOp(OpTest):  #OpTest
+class TestRasterizeTrianglesOp(OpTest):
     def setUp(self):
         self.op_type = "rasterize_triangles"
-        """
-        vertices = np.array([[-0.5, -0.5, 0.8, 1.0],
-                             [0.0, 0.5, 0.3, 1.0],
-                             [0.5, -0.5, 0.3, 1.0],
-                             [-0.5, -0.5, 0.8, -1.0],
-                             [0.0, 0.5, 0.3, -1.0],
-                             [0.5, -0.5, 0.3, -1.0],
-                             [-0.5, -0.5, 1.0, 0.1],
-                             [0.0, 0.5, 1.0, 0.1],
-                             [0.5, -0.5, 1.0, 0.1],], dtype=np.float32)
-        triangles = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]], dtype = np.int32)
-        """
         num_triangles = 20
         v_data = 2 * np.random.rand(12 * num_triangles) - 1
         vertices = v_data.reshape(3 * num_triangles, 4).astype('float32')
-        t_data = np.array([i for i in range(3*num_triangles)])
+        t_data = np.array([i for i in range(3 * num_triangles)])
         triangles = t_data.reshape(num_triangles, 3).astype('int32')
-
-        # coverage
-
 
         image_height = 480
         image_width = 640
@@ -176,5 +154,3 @@ class TestRasterizeTrianglesOp(OpTest):  #OpTest
 
 if __name__ == '__main__':
     unittest.main()
-#    c = TestRasterizeTrianglesOp()
-#    c.setUp()
