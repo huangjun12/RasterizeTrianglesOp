@@ -92,6 +92,12 @@ class RasterizeTrianglesOp : public framework::OperatorWithKernel{
     ctx->SetOutputDim("TriangleIds", {image_height, image_width});
     ctx->SetOutputDim("ZBuffer", {image_height, image_width});
   }
+protected:    //int not float bug
+    framework::OpKernelType GetExpectedKernelType(
+            const framework::ExecutionContext& ctx) const override {
+        return framework::OpKernelType(ctx.Input<framework::Tensor>("Vertices")->type(),
+                                       ctx.device_context());
+    }
 };
 
 class RasterizeTrianglesOpGradMaker : public framework::SingleGradOpDescMaker{
@@ -133,6 +139,12 @@ class RasterizeTrianglesGradOp : public framework::OperatorWithKernel {
 
     ctx->SetOutputDim(framework::GradVarName("Vertices"), ctx->GetInputDim("Vertices"));
   }
+ protected:
+    framework::OpKernelType GetExpectedKernelType(
+            const framework::ExecutionContext& ctx) const override {
+        return framework::OpKernelType(ctx.Input<framework::Tensor>("Vertices")->type(),
+                                       ctx.device_context());
+    }
 };
 
 } // namespace operators

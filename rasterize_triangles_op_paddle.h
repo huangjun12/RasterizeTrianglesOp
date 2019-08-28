@@ -1,4 +1,4 @@
-/* Copyright (c) ... */
+/* Copixel_yright (c) ... */
 
 #include "paddle/fluid/framework/op_registry.h"
 #include "paddle/fluid/framework/operator.h"
@@ -90,6 +90,10 @@ public:
         Tensor* barycentric_coordinates_tensor = context.Output<Tensor>("BarycentricCoordinates");
         Tensor* triangle_ids_tensor = context.Output<Tensor>("TriangleIds");
         Tensor* z_buffer_tensor = context.Output<Tensor>("ZBuffer");
+
+        barycentric_coordinates_tensor->mutable_data<float>(context.GetPlace());
+        triangle_ids_tensor->mutable_data<int>(context.GetPlace());
+        z_buffer_tensor->mutable_data<float>(context.GetPlace());
 
         const int image_height = context.Attr<int>("image_height");
         const int image_width = context.Attr<int>("image_width");
@@ -207,6 +211,8 @@ public:
         Tensor* df_vertices_tensor = context.Output<Tensor>(
                 framework::GradVarName("Vertices"));
 
+        df_vertices_tensor->mutable_data<float>(context.GetPlace());
+
         const int image_height = context.Attr<int>("image_height");
         const int image_width = context.Attr<int>("image_width");
 
@@ -226,30 +232,28 @@ public:
         float* df_vertices_data = df_vertices_eigen.data();
 
         //Start computing
-        std::fill(df_vertices_data, df_vertices_data + vertex_count *4, 0.0f);
+        std::fill(df_vertices_data, df_vertices_data + vertex_count * 4, 0.0f);
 
         for (unsigned int pixel_id = 0; pixel_id < image_height * image_width; ++pixel_id) {
-            const float b0 = barycentric_coordinates_data[3 * pixel_id];
-            const float b1 = barycentric_coordinates_data[3 * pixel_id + 1];
-            const float b2 = barycentric_coordinates_data[3 * pixel_id + 2];
+            const float bc0 = barycentric_coordinates_data[3 * pixel_id];
+            const float bc1 = barycentric_coordinates_data[3 * pixel_id + 1];
+            const float bc2 = barycentric_coordinates_data[3 * pixel_id + 2];
 
-        if (b0 + b1 + b2 < kDegenerateBarycentricCoordinatesCutoff) {
+        if (bc0 + bc1 + bc2 < kDegenerateBarycentricCoordinatesCutoff) {
             continue;
         }
 
-        const float df_b0 = df_barycentric_coordinates_data[3 * pixel_id];
-        const float df_b1 = df_barycentric_coordinates_data[3 * pixel_id + 1];
-        const float df_b2 = df_barycentric_coordinates_data[3 * pixel_id + 2];
+        const float df_dbc0 = df_barycentric_coordinates_data[3 * pixel_id];
+        const float df_dbc1 = df_barycentric_coordinates_data[3 * pixel_id + 1];
+        const float df_dbc2 = df_barycentric_coordinates_data[3 * pixel_id + 2];
 
         const int triangle_at_current_pixel = triangle_ids_data[pixel_id];
         const int* vertices_at_current_pixle = &triangles_data[3 * triangle_at_current_pixel];
 
-        //Extract vertex indices for the current triangle.
         const int v0_id = 4 * vertices_at_current_pixle[0];
         const int v1_id = 4 * vertices_at_current_pixle[1];
         const int v2_id = 4 * vertices_at_current_pixle[2];
 
-        //Extract x,y,w components of the vertices' clip space coordinates.
         const float x0 = vertices_data[v0_id];
         const float y0 = vertices_data[v0_id + 1];
         const float w0 = vertices_data[v0_id + 3];
@@ -260,41 +264,37 @@ public:
         const float y2 = vertices_data[v2_id + 1];
         const float w2 = vertices_data[v2_id + 3];
 
-        //Compute pixel's NDC-s.
         const int ix = pixel_id % image_width;
         const int iy = pixel_id / image_width;
-        const float px = 2 * (ix + 0.5f) / image_width - 1.0f;
-        const float py = 2 * (iy + 0.5f) / image_height - 1.0f;
+        const float pixel_x = 2 * (ix + 0.5f) / image_width - 1.0f;
+        const float pixel_y = 2 * (iy + 0.5f) / image_height - 1.0f;
 
-        // Baricentric gradients wrt each vertex coordinate share a common factor.
-        const float db0_dx = py * (w1 - w2) - (y1 - y2);
-        const float db1_dx = py * (w2 - w0) - (y2 - y0);
-        const float db2_dx = -(db0_dx + db1_dx);
-        const float db0_dy = (x1 - x2) - px * (w1 - w2);
-        const float db1_dy = (x2 - x0) - px * (w2 - w0);
-        const float db2_dy = -(db0_dy + db1_dy);
-        const float db0_dw = px * (y1 - y2) - py * (x1 - x2);
-        const float db1_dw = px * (y2 - y0) - py * (x2 - x0);
-        const float db2_dw = -(db0_dw + db1_dw);
+        // Baricentric gradients wrt each vertex coordinate.
+        const float dbc0_dx = pixel_y * (w1 - w2) - (y1 - y2);
+        const float dbc1_dx = pixel_y * (w2 - w0) - (y2 - y0);
+        const float dbc2_dx = -(dbc0_dx + dbc1_dx);
+        const float dbc0_dy = (x1 - x2) - pixel_x * (w1 - w2);
+        const float dbc1_dy = (x2 - x0) - pixel_x * (w2 - w0);
+        const float dbc2_dy = -(dbc0_dy + dbc1_dy);
+        const float dbc0_dw = pixel_x * (y1 - y2) - pixel_y * (x1 - x2);
+        const float dbc1_dw = pixel_x * (y2 - y0) - pixel_y * (x2 - x0);
+        const float dbc2_dw = -(dbc0_dw + dbc1_dw);
 
-        // Combine them with chain rule.
-        const float df_dx = df_b0 * db0_dx + df_b1 * db1_dx + df_b2 * db2_dx;
-        const float df_dy = df_b0 * db0_dy + df_b1 * db1_dy + df_b2 * db2_dy;
-        const float df_dw = df_b0 * db0_dw + df_b1 * db1_dw + df_b2 * db2_dw;
+        const float df_dx = df_dbc0 * dbc0_dx + df_dbc1 * dbc1_dx + df_dbc2 * dbc2_dx;
+        const float df_dy = df_dbc0 * dbc0_dy + df_dbc1 * dbc1_dy + df_dbc2 * dbc2_dy;
+        const float df_dw = df_dbc0 * dbc0_dw + df_dbc1 * dbc1_dw + df_dbc2 * dbc2_dw;
 
         // Values of edge equations and inverse w at the current pixel.
-        const float edge0_over_w = x2 * db0_dx + y2 * db0_dy + w2 * db0_dw;
-        const float edge1_over_w = x2 * db1_dx + y2 * db1_dy + w2 * db1_dw;
-        const float edge2_over_w = x1 * db2_dx + y1 * db2_dy + w1 * db2_dw;
-        const float w_inv = edge0_over_w + edge1_over_w + edge2_over_w;
+        const float edge0_w = x2 * dbc0_dx + y2 * dbc0_dy + w2 * dbc0_dw;
+        const float edge1_w = x2 * dbc1_dx + y2 * dbc1_dy + w2 * dbc1_dw;
+        const float edge2_w = x1 * dbc2_dx + y1 * dbc2_dy + w1 * dbc2_dw;
+        const float w_inv = edge0_w + edge1_w + edge2_w;
 
-        // All gradients share a common denominator.
         const float w_sqr = 1 / (w_inv * w_inv);
 
-        // Gradients wrt each vertex share a common factor.
-        const float edge0 = w_sqr * edge0_over_w;
-        const float edge1 = w_sqr * edge1_over_w;
-        const float edge2 = w_sqr * edge2_over_w;
+        const float edge0 = w_sqr * edge0_w;
+        const float edge1 = w_sqr * edge1_w;
+        const float edge2 = w_sqr * edge2_w;
 
         df_vertices_data[v0_id + 0] += edge0 * df_dx;
         df_vertices_data[v0_id + 1] += edge0 * df_dy;

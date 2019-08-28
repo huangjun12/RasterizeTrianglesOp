@@ -12667,8 +12667,8 @@ def rasterize_triangles(vertices, triangles, image_height, image_width, name=Non
         .. code-block:: python
 
             import paddle.fluid as fluid
-            vertices = fluid.layers.data(name="vertices", shape=[3, 4], dtype="float32")
-            triangles = fluid.layers.data(name="triangles", shape=[1, 3], dtype="int32")
+            vertices = fluid.layers.data(name="vertices", shape=[-1, 4], dtype="float32")
+            triangles = fluid.layers.data(name="triangles", shape=[-1, 3], dtype="int32")
             barycentric_coordinates, triangle_ids, z_buffer = fluid.layers.rasterize_triangles(
                                                               vertices, triangles, image_height=480, image_width=640)
     """

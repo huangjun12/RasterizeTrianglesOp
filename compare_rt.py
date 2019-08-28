@@ -1,9 +1,3 @@
-
-# Copixel_yright... 
-
-import unittest
-from op_test import OpTest
-
 import numpy as np
 import math
 
@@ -57,9 +51,9 @@ def ComputeRasterizeTriangles(vertices, triangles, image_height, image_width):
         vx2_id = 4 * triangles[3 * triangle_id + 2];
 
         vw0 = vertices[vx0_id + 3]  #get the last one in each row of vertices, w from xyzw
-        vw1 = vertices[vx1_id + 3] 
+        vw1 = vertices[vx1_id + 3]
         vw2 = vertices[vx2_id + 3]
-        
+
         if (vw0 < 0 and vw1 < 0 and vw2 < 0):
             continue
 
@@ -96,7 +90,7 @@ def ComputeRasterizeTriangles(vertices, triangles, image_height, image_width):
             for ix in range(left, right):
                 pixel_x = ((ix + 0.5) / half_image_width) - 1.0
                 pixel_y = ((iy + 0.5) / half_image_height) - 1.0
-                pixel_idx = iy * image_width + ix
+                pixel_idx = int(iy * half_image_width + ix)
 
                 edge_w = ComputeEdgeFunctions(pixel_x, pixel_y, unnormalized_matrix_inverse)
 
@@ -127,54 +121,14 @@ def ComputeRasterizeTriangles(vertices, triangles, image_height, image_width):
     barycentric_coordinates = barycentric_coordinates.reshape(image_height, image_width, 3)
     triangle_ids = triangle_ids.reshape(image_height, image_width)
     z_buffer = z_buffer.reshape(image_height, image_width)
-#    print('barycentric_coordinates', barycentric_coordinates)
-#    print('triangle_ids', triangle_ids)
-#    print('z_buffer', z_buffer)
     return barycentric_coordinates, triangle_ids, z_buffer
 
-class TestRasterizeTrianglesOp(OpTest):  #OpTest
-    def setUp(self):
-        self.op_type = "rasterize_triangles"
-        """
-        vertices = np.array([[-0.5, -0.5, 0.8, 1.0],
-                             [0.0, 0.5, 0.3, 1.0],
-                             [0.5, -0.5, 0.3, 1.0],
-                             [-0.5, -0.5, 0.8, -1.0],
-                             [0.0, 0.5, 0.3, -1.0],
-                             [0.5, -0.5, 0.3, -1.0],
-                             [-0.5, -0.5, 1.0, 0.1],
-                             [0.0, 0.5, 1.0, 0.1],
-                             [0.5, -0.5, 1.0, 0.1],], dtype=np.float32)
-        triangles = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]], dtype = np.int32)
-        """
-        num_triangles = 20
-        v_data = 2 * np.random.rand(12 * num_triangles) - 1
-        vertices = v_data.reshape(3 * num_triangles, 4).astype('float32')
-        t_data = np.array([i for i in range(3*num_triangles)])
-        triangles = t_data.reshape(num_triangles, 3).astype('int32')
-
-        # coverage
-
-
-        image_height = 480
-        image_width = 640
-        barycentric_coordinates, triangle_ids, z_buffer = ComputeRasterizeTriangles(vertices, triangles, image_height, image_width)
-        self.inputs = {
-            'Vertices': vertices,
-            'Triangles': triangles}
-        self.attrs = {'image_height': image_height,
-                      'image_width': image_width}
-        self.outputs = {'BarycentricCoordinates': barycentric_coordinates,
-                        'TriangleIds': triangle_ids,
-                        'ZBuffer': z_buffer}
-
-    def test_check_output(self):
-        self.check_output()
-
-    def test_check_grad_normal(self):
-        self.check_grad(['Vertices'], 'BarycentricCoordinates', max_relative_error=0.005)
-
 if __name__ == '__main__':
-    unittest.main()
-#    c = TestRasterizeTrianglesOp()
-#    c.setUp()
+    vertices = np.array([[-0.5, -0.5, 0.8, 1.0], [0.0, 0.5, 0.3, 1.0], [0.5, -0.5, 0.3, 1.0]], dtype=np.float32)
+    triangles = np.array([[0, 1, 2]], dtype = np.int32)
+    image_height = 10
+    image_width = 20
+    barycentric_coordinates, triangle_ids, z_buffer = ComputeRasterizeTriangles(vertices, triangles, image_height, image_width)
+    print('barycentric_coordinates', barycentric_coordinates)
+    print('triangle_ids', triangle_ids)
+    print('z_buffer', z_buffer)
