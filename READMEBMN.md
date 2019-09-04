@@ -13,7 +13,7 @@
 
 ## 模型简介
 
-BMN模型是百度自研，2019年ActivityNet夺冠方案，在PaddlePaddle上首次开源，为开发者处理视频动作定位问题中proposal的生成提供了高效的解决方案。此模型引入Boundary-Matching机制来评估proposal的置信度，将一个proposal看成由开始边界和结束边界组成的BM pairs，基于所有的BM pairs构建BM confidence map。网络由三个模块组成，基础模块作为主干网络处理输入的特征序列，TEM模块预测每一个时序位置属于动作开始、动作结束的概率，PEM模块生成BM confidence map。
+BMN模型是百度自研，2019年ActivityNet夺冠方案，为视频动作定位问题中proposal的生成提供了高效的解决方案，在PaddlePaddle上首次开源。此模型引入Boundary-Matching机制来评估proposal的置信度，将一个proposal看作由开始边界和结束边界组成的BM pairs，基于所有的BM pairs构建BM confidence map。网络由三个模块组成，基础模块作为主干网络处理输入的特征序列，TEM模块预测每一个时序位置属于动作开始、动作结束的概率，PEM模块生成BM confidence map。
 
 
 ## 数据准备
@@ -87,7 +87,7 @@ BMN的训练数据采用ActivityNet1.3提供的数据集，数据下载及准备
                       --filelist=$FILELIST \
                       --use_gpu=True
 
-    bash run.sh predict BsnTem ./configs/bsn_tem.yaml
+    bash run.sh predict BMN ./configs/bmn.yaml
 
 - 使用python命令行启动程序时，`--filelist`参数指定待推断的文件列表，如果不设置，默认为data/dataset/bmn/infer.list。`--weights`参数为训练好的权重参数，如果不设置，程序会自动下载已训练好的权重。这两个参数如果不设置，请不要写在命令行，将会自动使用默认值。
 
