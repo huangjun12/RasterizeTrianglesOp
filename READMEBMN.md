@@ -13,7 +13,7 @@
 
 ## 模型简介
 
-BMN模型是百度自研，2019年ActivityNet夺冠方案，为视频动作定位问题中proposal的生成提供了高效的解决方案，在PaddlePaddle上首次开源。此模型引入Boundary-Matching机制来评估proposal的置信度，将一个proposal看作由开始边界和结束边界组成的BM pairs，基于所有的BM pairs构建BM confidence map。网络由三个模块组成，基础模块作为主干网络处理输入的特征序列，TEM模块预测每一个时序位置属于动作开始、动作结束的概率，PEM模块生成BM confidence map。
+BMN模型是百度自研，2019年ActivityNet夺冠方案，为视频动作定位问题中proposal的生成提供高效的解决方案，在PaddlePaddle上首次开源。此模型引入Boundary-Matching机制来评估proposal的置信度，将一个proposal看作由开始边界和结束边界组成的BM pairs，基于所有的BM pairs构建BM confidence map。网络由三个模块组成，基础模块作为主干网络处理输入的特征序列，TEM模块预测每一个时序位置属于动作开始、动作结束的概率，PEM模块生成BM confidence map。
 
 
 ## 数据准备
